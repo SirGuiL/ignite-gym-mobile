@@ -1,6 +1,21 @@
+import { HistoryDTO } from '@dtos/HistoryDTO'
 import { HStack, Heading, Text, VStack } from 'native-base'
 
-export function HistoryCard() {
+type Props = {
+  data: HistoryDTO
+}
+
+export function HistoryCard({ data }: Props) {
+  const formattedHour = () => {
+    let hour = Number(data.hour.substring(0, 2)) - 3
+
+    if (hour < 0) {
+      hour += 24
+    }
+
+    return `${hour}:${data.hour.substring(3, 5)}`
+  }
+
   return (
     <HStack
       w="full"
@@ -20,16 +35,16 @@ export function HistoryCard() {
           numberOfLines={1}
           fontFamily="heading"
         >
-          Costas
+          {data.group}
         </Heading>
 
         <Text color="gray.100" fontSize="lg" numberOfLines={1}>
-          Puxada frontal
+          {data.name}
         </Text>
       </VStack>
 
       <Text color="gray.300" fontSize="md">
-        08:56
+        {formattedHour()}
       </Text>
     </HStack>
   )

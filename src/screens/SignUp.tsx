@@ -7,6 +7,7 @@ import {
   Heading,
   View,
   ScrollView,
+  useToast,
 } from 'native-base'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -19,6 +20,10 @@ import BackgroundImage from '@assets/background.png'
 
 import { Input } from '@components/Input'
 import { Button } from '@components/Button'
+import { api } from '@services/api'
+import { AppError } from '@utils/AppError'
+import { useState } from 'react'
+import { useAuth } from '@hooks/useAuth'
 
 interface FormDataProps {
   name: string
@@ -33,7 +38,7 @@ const signUpSchema = yup.object({
   password: yup
     .string()
     .required('Informe a senha.')
-    .min(6, 'A senha deve ter ao menos 6 digitos.'),
+    .min(6, 'A senha deve ter ao menos 6 dígitos.'),
   password_confirm: yup
     .string()
     .required('Informe a senha.')
@@ -44,6 +49,11 @@ const signUpSchema = yup.object({
 })
 
 export function SignUp() {
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+
+  const { signIn } = useAuth()
+  const toast = useToast()
+  const navigation = useNavigation<AuthNavigatorRoutesProps>()
   const {
     control,
     handleSubmit,
@@ -52,13 +62,46 @@ export function SignUp() {
     resolver: yupResolver(signUpSchema),
   })
 
-  const navigation = useNavigation<AuthNavigatorRoutesProps>()
-
   const handleGoToSignIn = () => {
     navigation.navigate('signIn')
   }
 
-  const handleSignUp = async (data: FormDataProps) => {}
+  const handleSignUp = async ({ email, name, password }: FormDataProps) => {
+    try {
+      setIsLoading(true)
+
+      await api.post(
+        '/users',
+        {
+          email,
+          name,
+          password,
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      await signIn(email, password)
+    } catch (err: any) {
+      const isAppError = err instanceof AppError
+
+      const title = isAppError
+        ? err.message
+        : 'Não foi possível criar a conta. Tente novamente mais tarde.'
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+
+      setIsLoading(false)
+    }
+  }
 
   return (
     <ScrollView
@@ -97,6 +140,7 @@ export function SignUp() {
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.name?.message}
+                  isDisabled={isLoading}
                 />
               )}
             />
@@ -112,6 +156,7 @@ export function SignUp() {
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.email?.message}
+                  isDisabled={isLoading}
                 />
               )}
             />
@@ -123,9 +168,11 @@ export function SignUp() {
                 <Input
                   placeholder="Senha"
                   secureTextEntry
+                  autoCapitalize="none"
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors.password?.message}
+                  isDisabled={isLoading}
                 />
               )}
             />
@@ -137,11 +184,13 @@ export function SignUp() {
                 <Input
                   placeholder="Confirme a Senha"
                   secureTextEntry
+                  autoCapitalize="none"
                   onChangeText={onChange}
                   value={value}
                   onSubmitEditing={handleSubmit(handleSignUp)}
                   returnKeyType="send"
                   errorMessage={errors.password_confirm?.message}
+                  isDisabled={isLoading}
                 />
               )}
             />
@@ -150,6 +199,7 @@ export function SignUp() {
               title="Criar e acessar"
               mt={2}
               onPress={handleSubmit(handleSignUp)}
+              isLoading={isLoading}
             />
           </Center>
         </View>

@@ -18,7 +18,7 @@ type AppRoutes = {
   home: undefined
   history: undefined
   exercise: {
-    id: string
+    exerciseId: string
   }
   profile: undefined
 }
